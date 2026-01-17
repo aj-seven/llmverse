@@ -21,6 +21,9 @@ type Config struct {
 	Assistant struct {
 		Message string `yaml:"message"`
 	} `yaml:"system"`
+	Theme struct {
+		Markdown string  `yaml:"markdown"`
+	} `yaml:"theme"`
 }
 
 func LoadOrNew(cliHost string) (*Config, error) {
@@ -96,6 +99,7 @@ func createDefaultConfig(path string) (*Config, error) {
 	cfg.Storage.Path = historyPath
 	cfg.Host = "http://localhost:11434"
 	cfg.Assistant.Message = ""
+	cfg.Theme.Markdown = "dark"
 
 	data, err := yaml.Marshal(cfg)
 	if err != nil {

@@ -539,7 +539,7 @@ func (m *ChatModel) renderMessages() string {
 
 		content := msg.Content
 		// Render Markdown
-		renderedContent, err := glamour.Render(content, "dark")
+		renderedContent, err := glamour.Render(content, m.cfg.Theme.Markdown)
 		if err != nil {
 			renderedContent = content
 		}
