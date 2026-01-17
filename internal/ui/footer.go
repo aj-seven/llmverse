@@ -104,11 +104,46 @@ func (f *Footer) View() string {
 	secondaryStyle := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("245"))
 
+	// primary content (Model)
+	modelContent := f.primaryContent
+	modelLabel := ""
+	modelName := ""
+	if strings.HasPrefix(modelContent, "Model: ") {
+		modelLabel = "Model: "
+		modelName = strings.TrimPrefix(modelContent, "Model: ")
+	} else {
+		modelName = modelContent
+	}
+
+	// secondary content (System Message)
+	sysMsgContent := f.secondaryContent
+	sysMsgLabel := ""
+	sysMsgIndicator := ""
+	if strings.HasPrefix(sysMsgContent, "System Message: ") {
+		sysMsgLabel = "System Message: "
+		sysMsgIndicator = strings.TrimPrefix(sysMsgContent, "System Message: ")
+	}
+
+	var sysMsgStatus string
+	var indicatorStyle lipgloss.Style
+	if strings.TrimSpace(sysMsgIndicator) == "✔" {
+		sysMsgStatus = "Available"
+		indicatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
+	} else if strings.TrimSpace(sysMsgIndicator) == "✖" {
+		sysMsgStatus = "NA"
+		indicatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
+	}
+
 	leftContent := lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		primaryStyle.Render(f.primaryContent),
+		secondaryStyle.Render(modelLabel),
+		primaryStyle.Render(modelName),
+		"  |  ", // separator
+		secondaryStyle.Render(sysMsgLabel),
 		" ",
-		secondaryStyle.Render(f.secondaryContent),
+		primaryStyle.Render(sysMsgStatus),
+		" ",
+		indicatorStyle.Render(strings.TrimSpace(sysMsgIndicator)),
 	)
 
 	rightWidth := innerWidth - lipgloss.Width(leftContent)

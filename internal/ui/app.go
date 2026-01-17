@@ -321,6 +321,10 @@ func (m *Model) newChat(modelName, historyID string) {
 	)
 }
 
+func (m *Model) isSystemMessageSet() bool {
+	return m.cfg != nil && m.cfg.Assistant.Message != ""
+}
+
 // Footer
 func (m *Model) updateFooterContent() {
 	m.footer.ShowContent(false)
@@ -330,9 +334,15 @@ func (m *Model) updateFooterContent() {
 
 	case ChatView:
 		m.header.SetTitle("Chat")
+
+		sysMsgIndicator := " ✖"
+		if m.isSystemMessageSet() {
+			sysMsgIndicator = " ✔"
+		}
+
 		m.footer.SetContent(
 			fmt.Sprintf("Model: %s", m.currentModel),
-			"",
+			fmt.Sprintf("System Message: %s", sysMsgIndicator),
 		)
 		m.footer.SetShortcuts(
 			keymap.Shortcut{Key: "ctrl+o", Action: "Models"},

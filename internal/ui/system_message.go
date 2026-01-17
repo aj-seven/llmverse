@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"strings"
 	"time"
 
 	"github.com/aj-seven/llmverse/internal/config"
@@ -55,7 +54,9 @@ func (m *SystemModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			m.codePopup = false
 			m.codeTextarea.Blur()
-			return m, nil
+			return m, func() tea.Msg {
+				return messages.SystemPopupStatusMsg{IsOpen: false}
+			}
 		case "ctrl+s":
 			return m.saveSystemMessage()
 		}
@@ -121,13 +122,13 @@ func (m *SystemModel) saveSystemMessage() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	code := strings.TrimSpace(m.codeTextarea.Value())
-	if code == "" {
-		return m, nil
-	}
-
+	code := m.codeTextarea.Value()
 	_ = m.config.SetSystemMessage(code)
 
-	return m, ShowToast("System Message saved.", 2*time.Second)
-
+	return m, tea.Batch(
+		ShowToast("System Message saved.", 2*time.Second),
+		func() tea.Msg {
+			return messages.SystemPopupStatusMsg{IsOpen: m.codePopup}
+		},
+	)
 }
