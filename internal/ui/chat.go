@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -537,15 +538,21 @@ func (m *ChatModel) renderMessages() string {
 		}
 
 		content := msg.Content
+		// Render Markdown
+		renderedContent, err := glamour.Render(content, "dark")
+		if err != nil {
+			renderedContent = content
+		}
+
 		if m.streaming && i == len(messages)-1 {
-			content += "\n" + m.animationStyle.Render(
+			renderedContent += " " + m.animationStyle.Render(
 				animationFrames[m.animationStep%len(animationFrames)],
 			)
 		}
 
 		out = append(out,
 			m.botStyle.Render(m.modelName)+"\n"+
-				style.Render(content),
+				style.Render(renderedContent),
 		)
 	}
 
@@ -562,14 +569,29 @@ func animationTick() tea.Cmd {
 
 func readStreamCmd(stream <-chan string, cancel <-chan struct{}) tea.Cmd {
 	return func() tea.Msg {
-		select {
-		case <-cancel:
-			return streamDoneMsg{}
-		case chunk, ok := <-stream:
-			if !ok {
+		var batch []string
+		ticker := time.NewTicker(1 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-cancel:
 				return streamDoneMsg{}
+			case chunk, ok := <-stream:
+				if !ok {
+					if len(batch) > 0 {
+						return streamChunkMsg{chunk: strings.Join(batch, "")}
+					}
+					return streamDoneMsg{}
+				}
+				batch = append(batch, chunk)
+			case <-ticker.C:
+				if len(batch) > 0 {
+					msg := streamChunkMsg{chunk: strings.Join(batch, "")}
+					batch = nil
+					return msg
+				}
 			}
-			return streamChunkMsg{chunk: chunk}
 		}
 	}
 }
