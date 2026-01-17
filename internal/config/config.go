@@ -16,7 +16,9 @@ const (
 type Config struct {
 	Host    string `yaml:"host"`
 	Storage struct {
-		Path string `yaml:"path"`
+		History struct {
+			Path string `yaml:"path"`
+		} `yaml:"history"`
 	} `yaml:"storage"`
 	Assistant struct {
 		Message string `yaml:"message"`
@@ -96,7 +98,7 @@ func createDefaultConfig(path string) (*Config, error) {
 	historyPath := filepath.Join(userHomeDir, "."+configDirName, "history")
 
 	cfg := &Config{}
-	cfg.Storage.Path = historyPath
+	cfg.Storage.History.Path = historyPath
 	cfg.Host = "http://localhost:11434"
 	cfg.Assistant.Message = ""
 	cfg.Theme.Markdown = "dark"

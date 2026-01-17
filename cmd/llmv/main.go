@@ -23,7 +23,7 @@ func main() {
 	}
 
 	// Initialize history storage
-	fileStorage, err := history.NewFileStorage()
+	fileStorage, err := history.NewFileStorage(cfg)
 	if err != nil {
 		exit(err)
 	}

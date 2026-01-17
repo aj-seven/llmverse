@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aj-seven/llmverse/internal/config"
 	"github.com/google/uuid"
 )
 
@@ -21,11 +22,12 @@ const (
 // FileStorage implements the Storage interface using JSON files.
 type FileStorage struct {
 	dataDir string
+	cfg *config.Config
 }
 
 // NewFileStorage creates in:
 // ~/.llmv/history
-func NewFileStorage() (*FileStorage, error) {
+func NewFileStorage(cfg *config.Config) (*FileStorage, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user home dir: %w", err)
@@ -37,7 +39,10 @@ func NewFileStorage() (*FileStorage, error) {
 		return nil, fmt.Errorf("failed to create history directory: %w", err)
 	}
 
-	return &FileStorage{dataDir: dataDir}, nil
+	return &FileStorage{
+		dataDir: dataDir,
+		cfg:     cfg,
+	}, nil
 }
 
 // SaveHistory saves a single chat history to disk.
@@ -93,7 +98,7 @@ func (s *FileStorage) GetHistory(id string) (History, error) {
 func (s *FileStorage) GetHistories() ([]History, error) {
 	var histories []History
 
-	err := filepath.WalkDir(s.dataDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(s.historyDir(), func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -152,5 +157,21 @@ func (s *FileStorage) DeleteHistory(id string) error {
 
 // getHistoryFilePath returns the full path to a history file.
 func (s *FileStorage) getHistoryFilePath(id string) string {
-	return filepath.Join(s.dataDir, fmt.Sprintf("history_%s.json", id))
+	if s != nil && s.cfg != nil && s.historyDir() != "" {
+		if info, err := os.Stat(s.historyDir()); err == nil && info.IsDir() {
+			return filepath.Join(s.historyDir(), fmt.Sprintf("history_%s.json", id))
+		}
+	}
+
+	return filepath.Join(s.historyDir(), fmt.Sprintf("history_%s.json", id))
+}
+
+// getHistoryDir - checks first config's dir if valid and present uses it else default dir is used
+func (s *FileStorage) historyDir() string {
+	if s != nil && s.cfg != nil && s.cfg.Storage.History.Path != "" {
+		if err := os.MkdirAll(s.cfg.Storage.History.Path, 0755); err == nil {
+			return s.cfg.Storage.History.Path
+		}
+	}
+	return s.dataDir
 }
